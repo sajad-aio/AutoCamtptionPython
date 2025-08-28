@@ -1,0 +1,11 @@
+﻿{% extends "base.html" %}
+{% block title %}صفحه اصلی{% endblock %}
+{% block content %}
+<div class="text-center">
+  <h1>به برنامه زیرنویس‌ساز خوش آمدید</h1>
+  <p>برای ادامه، لطفاً وارد شوید یا ثبت‌نام کنید.</p>
+  <p>برای دریافت خدمات بهتری لطفا vpn خود را خاموش کنید.</p>
+  <a class="btn btn-primary" href="{{ url_for('login') }}">ورود</a>
+  <a class="btn btn-secondary" href="{{ url_for('register') }}">ثبت‌نام</a>
+</div>
+{% endblock %}

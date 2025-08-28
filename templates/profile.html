@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}پروفایل{% endblock %}
+{% block content %}
+<h3 class="mb-3">پروفایل کاربری</h3>
+<form method="POST" action="{{ url_for('profile') }}">
+  <div class="mb-3">
+    <label class="form-label">ایمیل (غیر قابل تغییر)</label>
+    <input type="text" class="form-control" value="{{ current_user.email }}" disabled>
+  </div>
+  <div class="mb-3">
+    <label for="username" class="form-label">نام کاربری</label>
+    <input type="text" class="form-control" id="username" name="username" value="{{ current_user.username }}">
+  </div>
+  <button type="submit" class="btn btn-warning mb-3">ذخیره تغییرات</button>
+</form>
+<div class="text-center">
+  <a class="btn btn-danger" href="{{ url_for('logout') }}">خروج</a>
+</div>
+{% endblock %}

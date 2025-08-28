@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}پروژه‌ها{% endblock %}
+{% block content %}
+<div class="projects-page">
+  <!-- دکمه ایجاد پروژه بزرگ و مرکزی -->
+  <div class="create-project-container text-center mb-4">
+    <button class="btn btn-lg btn-success create-project-btn" onclick="openCreateProjectModal()">
+      ایجاد پروژه جدید
+    </button>
+  </div>
+
+  <!-- پاپ‌آپ ایجاد پروژه جدید -->
+  <div id="createProjectModal" class="modal-overlay" style="display:none;">
+    <div class="custom-modal">
+      <h2>ایجاد پروژه جدید</h2>
+      <form id="uploadForm" method="POST" action="{{ url_for('create_project') }}" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label for="project_name" class="form-label">نام پروژه</label>
+          <input type="text" class="form-control" id="project_name" name="project_name" required>
+        </div>
+        <div class="mb-3">
+          <label for="video_lang" class="form-label">زبان ویدیو</label>
+          <select id="video_lang" name="video_lang" class="form-select" required>
+            <option value="fa">فارسی</option>
+            <option value="en">انگلیسی</option>
+            <option value="ar">عربی</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="subtitle_option" class="form-label">نوع زیرنویس</label>
+          <select id="subtitle_option" name="subtitle_option" class="form-select" onchange="toggleTranslateLang()" required>
+            <option value="original">زبان اصلی</option>
+            <option value="translated">ترجمه‌شده</option>
+          </select>
+        </div>
+        <div class="mb-3" id="translateDiv" style="display:none;">
+          <label for="target_sub_lang" class="form-label">زبان ترجمه</label>
+          <select id="target_sub_lang" name="target_sub_lang" class="form-select">
+            <option value="en">انگلیسی</option>
+            <option value="fa">فارسی</option>
+            <option value="ar">عربی</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="video_file" class="form-label">فایل ویدیو</label>
+          <input type="file" class="form-control" id="video_file" name="video_file" accept=".mp4,.avi,.mov,.mkv" required>
+        </div>
+        <div class="text-center">
+          <button type="submit" class="btn btn-primary">آپلود و ساخت پروژه</button>
+          <button type="button" class="btn btn-secondary" onclick="closeCreateProjectModal()">انصراف</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- لودینگ انیمیشنی هنگام ارسال فرم -->
+  <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <p class="loading-text">در حال پردازش... (ممکن است چند دقیقه طول بکشد)</p>
+    </div>
+  </div>
+
+  <!-- لیست پروژه‌های کاربر -->
+  <div class="row">
+    {% for proj in projects %}
+    <div class="col-md-4">
+      <div class="card text-dark mb-3">
+        <div class="card-body">
+          <h5 class="card-title">{{ proj.name }}</h5>
+          <p class="card-text">
+            زبان ویدیو: {{ proj.video_lang }} <br>
+            نوع زیرنویس: {{ proj.subtitle_option }}
+          </p>
+          <a href="{{ url_for('edit_subtitles', project_id=proj.id) }}" class="btn btn-primary">ویرایش</a>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+   
+  </div>
+</div>
+
+<script>
+  // نمایش لودینگ هنگام ارسال فرم
+  document.getElementById('uploadForm').addEventListener('submit', function() {
+    document.getElementById('loadingOverlay').style.display = 'flex';
+  });
+
+  // تغییر نمایش زبان ترجمه
+  function toggleTranslateLang() {
+    var option = document.getElementById("subtitle_option").value;
+    var translateDiv = document.getElementById("translateDiv");
+    if (option === "translated") {
+      translateDiv.style.display = "block";
+    } else {
+      translateDiv.style.display = "none";
+    }
+  }
+
+  // باز کردن پاپ‌آپ ایجاد پروژه
+  function openCreateProjectModal() {
+    document.getElementById('createProjectModal').style.display = 'flex';
+  }
+
+  // بستن پاپ‌آپ ایجاد پروژه
+  function closeCreateProjectModal() {
+    document.getElementById('createProjectModal').style.display = 'none';
+  }
+</script>
+{% endblock %}

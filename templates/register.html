@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}ثبت‌نام{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <h3 class="text-center">ثبت‌نام</h3>
+    <form method="POST" action="{{ url_for('register') }}">
+      <div class="mb-3">
+        <label for="email" class="form-label">ایمیل</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+      <div class="mb-3">
+        <label for="username" class="form-label">نام کاربری</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">رمز عبور</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">ثبت‌نام</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

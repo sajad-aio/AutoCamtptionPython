@@ -1,0 +1,206 @@
+﻿{% extends "base.html" %}
+{% block title %}ویرایش و پیشنمایش زیرنویس{% endblock %}
+{% block content %}
+<div class="container my-4">
+  <h3 class="mb-3">ویرایش زیرنویس برای پروژه: {{ project.name }}</h3>
+  <div class="row">
+    <!-- بخش پیشنمایش ویدیو با زیرنویس زنده -->
+    <div class="col-md-8 position-relative">
+      {% if project.final_video_path %}
+      <video id="videoPreview" controls width="640">
+        <source src="{{ url_for('processed_file', filename=project.final_video_path|basename) }}?v={{ timestamp }}" type="video/mp4">
+        مرورگر شما از تگ ویدیو پشتیبانی نمی‌کند.
+      </video>
+      {% else %}
+      <div class="loading-spinner">
+        <p>در حال پردازش ویدیو...</p>
+      </div>
+      {% endif %}
+      
+      <!-- Overlay زیرنویس زنده -->
+      <div id="subtitleOverlay" style="position:absolute; bottom:50px; left:0; right:0; text-align:center; pointer-events: none;">
+        <span id="subtitleText" style="background-color: rgba(0,0,0,0.7); color: #000000; padding: 4px 8px; border-radius: 4px; font-family: sans-serif; font-size: 20px;">
+          (پیشنمایش زیرنویس)
+        </span>
+      </div>
+    </div>
+    <!-- تنظیمات استایل و ترجمه زیرنویس -->
+    <div class="col-md-4">
+      <h5>تنظیمات استایل زیرنویس</h5>
+      <div class="mb-3">
+        <label for="fontFamily" class="form-label">فونت:</label>
+        <select id="fontFamily" class="form-select" onchange="updateSubtitleStyle()">
+          <option value="sans-serif">Sans-Serif</option>
+          <option value="Arial">Arial</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Vazir">Vazir</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label for="fontSize" class="form-label">اندازه فونت (px):</label>
+        <input type="range" id="fontSize" class="form-range" min="12" max="48" value="20" oninput="updateSubtitleStyle()">
+      </div>
+      <div class="mb-3">
+        <label for="bgColor" class="form-label">رنگ پس‌زمینه:</label>
+        <input type="color" id="bgColor" class="form-control form-control-color" value="#000000" onchange="updateSubtitleStyle()">
+      </div>
+      <div class="mb-3">
+        <label for="textColor" class="form-label">رنگ متن (این مقدار نادیده گرفته می‌شود):</label>
+        <input type="color" id="textColor" class="form-control form-control-color" value="#ffffff" onchange="updateSubtitleStyle()">
+      </div>
+      <div class="mb-3">
+        <label for="borderRadius" class="form-label">گردی گوشه پس‌زمینه (px):</label>
+        <input type="number" id="borderRadius" class="form-control" value="0" onchange="updateSubtitleStyle()">
+      </div>
+      <hr>
+      <h5>تغییر زبان زیرنویس</h5>
+      <div class="mb-3">
+        <label for="subtitle-lang" class="form-label">زبان زیرنویس:</label>
+        <select id="subtitle-lang" class="form-select" onchange="changeSubtitleLanguage()">
+          <option value="fa" {% if target_lang == 'fa' %}selected{% endif %}>فارسی</option>
+          <option value="en" {% if target_lang == 'en' %}selected{% endif %}>انگلیسی</option>
+          <option value="ar" {% if target_lang == 'ar' %}selected{% endif %}>عربی</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- جدول ویرایش زیرنویس -->
+  <div class="mt-4">
+    <h5>ویرایش زمان‌بندی و متن زیرنویس</h5>
+    <table class="table table-bordered" id="subtitleTable">
+      <thead>
+        <tr>
+          <th>ردیف</th>
+          <th>زمان شروع (hh:mm:ss,ms)</th>
+          <th>زمان پایان (hh:mm:ss,ms)</th>
+          <th>متن زیرنویس</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set subtitles = edited_subtitles|default('') %}
+        {% if subtitles %}
+          {% set subtitle_lines = subtitles.split("\n\n") %}
+          {% for block in subtitle_lines %}
+            {% if block.strip() %}
+              {% set lines = block.split("\n") %}
+              <tr>
+                <td>{{ lines[0] }}</td>
+                {% if lines|length > 1 %}
+                  {% set times = lines[1].split(" --> ") %}
+                  {% if times|length > 1 %}
+                    <td contenteditable="true" class="editable-time-start" style="color: #000000;">{{ times[0] }}</td>
+                    <td contenteditable="true" class="editable-time-end" style="color: #000000;">{{ times[1] }}</td>
+                  {% else %}
+                    <td contenteditable="true" class="editable-time-start" style="color: #000000;">{{ lines[1] }}</td>
+                    <td contenteditable="true" class="editable-time-end" style="color: #000000;">{{ lines[1] }}</td>
+                  {% endif %}
+                {% else %}
+                  <td contenteditable="true" class="editable-time-start" style="color: #000000;"></td>
+                  <td contenteditable="true" class="editable-time-end" style="color: #000000;"></td>
+                {% endif %}
+                {% if lines|length > 2 %}
+                  <td contenteditable="true" class="editable-text" style="color: #000000;">{{ lines[2] }}</td>
+                {% else %}
+                  <td contenteditable="true" class="editable-text" style="color: #000000;"></td>
+                {% endif %}
+              </tr>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="4">هیچ زیرنویسی موجود نیست.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- فرم ذخیره نهایی -->
+  <div class="mt-4">
+    <form method="POST" action="{{ url_for('edit_subtitles', project_id=project.id) }}" id="saveVideoForm" onsubmit="generateSrtFromTable()">
+      <input type="hidden" name="action" value="save_video">
+      <!-- فیلد پنهان شامل فایل SRT تولید شده از جدول -->
+      <input type="hidden" id="edited_subtitles" name="edited_subtitles" value="">
+      <!-- فیلدهای مخفی تنظیمات استایل -->
+      <input type="hidden" id="hiddenFontFamily" name="fontFamily" value="">
+      <input type="hidden" id="hiddenFontSize" name="fontSize" value="">
+      <input type="hidden" id="hiddenBgColor" name="bgColor" value="">
+      <input type="hidden" id="hiddenTextColor" name="textColor" value="">
+      <button type="submit" class="btn btn-primary mt-3">ذخیره تغییرات نهایی ویدیو با زیرنویس و استایل جدید</button>
+    </form>
+  </div>
+  
+  <!-- دکمه‌های دانلود -->
+  <div class="mt-4 text-center">
+    <a href="{{ url_for('download_video', project_id=project.id) }}" class="btn btn-info mx-2">دانلود ویدیو نهایی</a>
+    <a href="{{ url_for('download_srt', project_id=project.id) }}" class="btn btn-secondary mx-2">دانلود فایل SRT</a>
+  </div>
+  
+  <!-- دکمه بازگشت به پروژه‌ها -->
+  <div class="mt-3 text-center">
+    <a href="{{ url_for('projects') }}" class="btn btn-outline-secondary">بازگشت به پروژه‌ها</a>
+  </div>
+</div>
+
+<script>
+function updateSubtitleStyle() {
+  var subtitleText = document.getElementById('subtitleText');
+  var fontFamily = document.getElementById('fontFamily').value;
+  var fontSize = document.getElementById('fontSize').value + 'px';
+  // طبق درخواست، رنگ پس‌زمینه انتخاب شده را به عنوان رنگ متن نیز اعمال می‌کنیم
+  var bgColor = document.getElementById('bgColor').value;
+  
+  subtitleText.style.fontFamily = fontFamily;
+  subtitleText.style.fontSize = fontSize;
+  subtitleText.style.backgroundColor = bgColor;
+  subtitleText.style.color = bgColor;  
+  
+  // به‌روزرسانی فیلدهای مخفی جهت ارسال به سرور
+  document.getElementById('hiddenFontFamily').value = fontFamily;
+  document.getElementById('hiddenFontSize').value = document.getElementById('fontSize').value;
+  document.getElementById('hiddenBgColor').value = bgColor;
+  document.getElementById('hiddenTextColor').value = bgColor;
+}
+
+function changeSubtitleLanguage() {
+  var lang = document.getElementById('subtitle-lang').value;
+  var projectId = "{{ project.id }}";
+  fetch("{{ url_for('translate_subtitles') }}?project_id=" + projectId + "&target_lang=" + lang)
+    .then(response => response.json())
+    .then(data => {
+      if(data.translated_text) {
+        document.getElementById('subtitleText').innerText = data.translated_text;
+      }
+    })
+    .catch(error => {
+      console.error('Translation error:', error);
+    });
+}
+
+function generateSrtFromTable() {
+  var table = document.getElementById('subtitleTable').getElementsByTagName('tbody')[0];
+  var rows = table.getElementsByTagName('tr');
+  var srtContent = "";
+  for (var i = 0; i < rows.length; i++) {
+    var cells = rows[i].getElementsByTagName('td');
+    if(cells.length < 4) continue;
+    var index = cells[0].innerText.trim();
+    var startTime = cells[1].innerText.trim();
+    var endTime = cells[2].innerText.trim();
+    var text = cells[3].innerText.trim();
+    srtContent += index + "\n" + startTime + " --> " + endTime + "\n" + text + "\n\n";
+  }
+  document.getElementById('edited_subtitles').value = srtContent;
+  // به‌روزرسانی لایه پیشنمایش زیرنویس (نمایش اولین خط اگر موجود باشد)
+  if(srtContent.trim() !== ""){
+    var firstBlock = srtContent.trim().split("\n\n")[0].split("\n");
+    if(firstBlock.length >= 3)
+      document.getElementById('subtitleText').innerText = firstBlock[2];
+  }
+}
+
+// فراخوانی اولیه هنگام بارگذاری صفحه
+updateSubtitleStyle();
+</script>
+{% endblock %}
